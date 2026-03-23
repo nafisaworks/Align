@@ -106,6 +106,8 @@ box-shadow:0 0 10px white;
 margin-top:12px;
 font-size:16px;
 line-height:1.5;
+opacity:1;
+transition: opacity 0.5s ease;
 }
 
 /* MOBILE OPTIMIZATION */
@@ -265,19 +267,28 @@ let newText = messages.length === 0
 ? "✨ Great posture! Keep it up."
 : messages.join("<br>");
 
-// ===== FEEDBACK DELAY SYSTEM =====
+// delay system
 if(!window.lastFeedbackTime){
 window.lastFeedbackTime = 0;
+window.lastFeedbackText = "";
 }
 
 let now = Date.now();
 
-// update only every 1.2 seconds
-if(now - window.lastFeedbackTime > 1200){
+if(now - window.lastFeedbackTime > 1500){
 
-    // update only if actually different
     if(window.lastFeedbackText !== newText){
-        feedback.innerHTML = newText;
+
+        // fade out
+        feedback.style.opacity = 0;
+
+        setTimeout(() => {
+            feedback.innerHTML = newText;
+
+            // fade in
+            feedback.style.opacity = 1;
+        }, 200);
+
         window.lastFeedbackText = newText;
     }
 
