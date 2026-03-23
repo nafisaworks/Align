@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Analyze</title>
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+
+</head>
+
+<body>
+
+<h2>Posture Analyzer</h2>
+
+<video id="video" width="400" autoplay></video>
+<canvas id="canvas" width="400"></canvas>
+
+<script>
+
+const video = document.getElementById('video');
+
+navigator.mediaDevices.getUserMedia({video:true})
+.then(stream=>{
+video.srcObject=stream;
+});
+
+</script>
+
+</body>
+</html>
