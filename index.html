@@ -1,148 +1,17 @@
 <!DOCTYPE html>
 <html>
-
 <head>
-
 <title>ALIGN</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-
-body{
-font-family:'Poppins', sans-serif;
-background:linear-gradient(135deg,#0f172a,#1e293b);
-color:white;
-text-align:center;
-margin:0;
-}
-
-header{
-padding:80px 20px;
-background:linear-gradient(90deg,#38bdf8,#6366f1);
-}
-
-h1{
-font-size:60px;
-margin:0;
-}
-
-.card{
-background:rgba(255,255,255,0.05);
-backdrop-filter:blur(10px);
-margin:30px;
-padding:25px;
-border-radius:15px;
-box-shadow:0 0 20px rgba(0,0,0,0.3);
-}
-
-button{
-padding:12px 25px;
-background:#38bdf8;
-border:none;
-border-radius:8px;
-cursor:pointer;
-color:black;
-font-weight:bold;
-}
-
-button:hover{
-background:#0ea5e9;
-}
-
-input{
-padding:10px;
-margin:8px;
-border-radius:6px;
-border:none;
-}
-
-canvas{
-max-width:600px;
-margin:auto;
-}
-
-</style>
-
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-<header>
-
 <h1>ALIGN</h1>
-<p>Explore Human Movement & Biomechanics</p>
+<p>AI Posture & Movement Analyzer</p>
 
-</header>
-
-<div class="card">
-
-<h2>What is Biomechanics?</h2>
-
-<p>
-Biomechanics studies how forces and motion interact in the human body,
-helping us understand posture, movement, and performance.
-</p>
-
-</div>
-
-<div class="card">
-
-<h2>Joint Torque Calculator</h2>
-
-<input id="force" placeholder="Force (N)">
-<input id="distance" placeholder="Distance (m)">
-
-<br><br>
-
-<button onclick="calc()">Calculate</button>
-
-<p id="result"></p>
-
-</div>
-
-<div class="card">
-
-<h2>Movement Graph (Knee Angle)</h2>
-
-<canvas id="chart"></canvas>
-
-</div>
-
-<script>
-
-function calc(){
-
-let F=document.getElementById("force").value;
-let d=document.getElementById("distance").value;
-
-let torque=F*d;
-
-document.getElementById("result").innerHTML=
-"Joint Torque = "+torque+" Nm";
-
-}
-
-// Chart
-
-const ctx=document.getElementById('chart');
-
-new Chart(ctx,{
-type:'line',
-data:{
-labels:["0","1","2","3","4","5"],
-datasets:[{
-label:"Knee Angle",
-data:[10,30,50,40,20,10],
-borderWidth:2
-}]
-}
-});
-
-</script>
+<button onclick="location.href='analyze.html'">Analyze Posture</button>
+<button onclick="location.href='learn.html'">Learn</button>
 
 </body>
-
 </html>
