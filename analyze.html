@@ -24,12 +24,6 @@ box-shadow:0 0 20px rgba(0,0,0,0.3);
 font-size:40px;
 font-weight:bold;
 }
-
-.history{
-margin-top:10px;
-font-size:14px;
-opacity:0.8;
-}
 </style>
 
 </head>
@@ -39,7 +33,6 @@ opacity:0.8;
 <div class="analyze-container">
 
 <h1>Live Posture Analyzer</h1>
-<p>AI-based posture evaluation</p>
 
 <video id="video" style="display:none;"></video>
 <canvas id="canvas" width="640" height="480"></canvas>
@@ -47,7 +40,6 @@ opacity:0.8;
 <div class="panel">
 <div id="score" class="score">Score: --</div>
 <p id="feedback"></p>
-<div class="history" id="history"></div>
 </div>
 
 </div>
@@ -60,9 +52,6 @@ const canvasCtx = canvasElement.getContext('2d');
 
 const feedback = document.getElementById('feedback');
 const scoreText = document.getElementById('score');
-const historyDiv = document.getElementById('history');
-
-let history = [];
 
 const pose = new Pose({
 locateFile: (file) => {
@@ -97,14 +86,14 @@ drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
 drawLandmarks(canvasCtx, results.poseLandmarks,
 {color: '#FF0000', lineWidth: 2});
 
-// ===== LANDMARKS =====
+// LANDMARKS
 let ls = results.poseLandmarks[11];
 let rs = results.poseLandmarks[12];
 let lh = results.poseLandmarks[23];
 let rh = results.poseLandmarks[24];
 let nose = results.poseLandmarks[0];
 
-// ===== CALCULATIONS =====
+// CALCULATIONS
 let score = 100;
 let messages = [];
 
@@ -149,24 +138,16 @@ feedback.innerHTML = messages.join("<br>");
 
 // Color indicator
 if(score > 80){
-scoreText.style.color = "#22c55e"; // green
+scoreText.style.color = "#22c55e";
 }
 else if(score > 50){
-scoreText.style.color = "#facc15"; // yellow
+scoreText.style.color = "#facc15";
 }
 else{
-scoreText.style.color = "#ef4444"; // red
+scoreText.style.color = "#ef4444";
 }
 
 scoreText.innerHTML = "Score: " + score;
-
-// ===== HISTORY =====
-history.push(score);
-if(history.length > 5){
-history.shift();
-}
-
-historyDiv.innerHTML = "Recent Scores: " + history.join(", ");
 
 }
 
