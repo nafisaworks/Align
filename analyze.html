@@ -9,6 +9,29 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
 
+<style>
+.panel{
+margin-top:20px;
+padding:20px;
+background:rgba(255,255,255,0.05);
+border-radius:15px;
+width:300px;
+text-align:center;
+box-shadow:0 0 20px rgba(0,0,0,0.3);
+}
+
+.score{
+font-size:40px;
+font-weight:bold;
+}
+
+.history{
+margin-top:10px;
+font-size:14px;
+opacity:0.8;
+}
+</style>
+
 </head>
 
 <body>
@@ -16,12 +39,16 @@
 <div class="analyze-container">
 
 <h1>Live Posture Analyzer</h1>
-<p>Works for both sitting and standing posture</p>
+<p>AI-based posture evaluation</p>
 
 <video id="video" style="display:none;"></video>
 <canvas id="canvas" width="640" height="480"></canvas>
 
-<p id="feedback" style="margin-top:20px;font-size:18px;"></p>
+<div class="panel">
+<div id="score" class="score">Score: --</div>
+<p id="feedback"></p>
+<div class="history" id="history"></div>
+</div>
 
 </div>
 
@@ -30,7 +57,12 @@
 const videoElement = document.getElementById('video');
 const canvasElement = document.getElementById('canvas');
 const canvasCtx = canvasElement.getContext('2d');
+
 const feedback = document.getElementById('feedback');
+const scoreText = document.getElementById('score');
+const historyDiv = document.getElementById('history');
+
+let history = [];
 
 const pose = new Pose({
 locateFile: (file) => {
@@ -41,14 +73,12 @@ return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
 pose.setOptions({
 modelComplexity: 1,
 smoothLandmarks: true,
-enableSegmentation: false,
 minDetectionConfidence: 0.5,
 minTrackingConfidence: 0.5
 });
 
 pose.onResults(results => {
 
-canvasCtx.save();
 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
 canvasCtx.drawImage(
@@ -67,32 +97,78 @@ drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
 drawLandmarks(canvasCtx, results.poseLandmarks,
 {color: '#FF0000', lineWidth: 2});
 
-// ===== POSTURE LOGIC =====
-
-let leftShoulder = results.poseLandmarks[11];
-let rightShoulder = results.poseLandmarks[12];
+// ===== LANDMARKS =====
+let ls = results.poseLandmarks[11];
+let rs = results.poseLandmarks[12];
+let lh = results.poseLandmarks[23];
+let rh = results.poseLandmarks[24];
 let nose = results.poseLandmarks[0];
 
-// Shoulder alignment
-let shoulderDiff = Math.abs(leftShoulder.y - rightShoulder.y);
+// ===== CALCULATIONS =====
+let score = 100;
+let messages = [];
 
-// Head forward detection
-let headOffset = Math.abs(nose.x - (leftShoulder.x + rightShoulder.x)/2);
+let shoulderDiff = Math.abs(ls.y - rs.y);
+let headOffset = Math.abs(nose.x - (ls.x + rs.x)/2);
+let lean = Math.abs((ls.x+rs.x)/2 - (lh.x+rh.x)/2);
 
-// Feedback logic
+// Shoulders
 if(shoulderDiff > 0.05){
-feedback.innerHTML = "⚠️ Your shoulders are uneven";
+score -= 15;
+messages.push("Shoulders uneven");
 }
-else if(headOffset > 0.1){
-feedback.innerHTML = "⚠️ Your head is not aligned with your body";
+
+// Head forward
+if(headOffset > 0.1){
+score -= 15;
+messages.push("Head forward");
+}
+
+// Slouch
+if(nose.y > ls.y){
+score -= 20;
+messages.push("Slouching");
+}
+
+// Leaning
+if(lean > 0.1){
+score -= 10;
+messages.push("Leaning sideways");
+}
+
+// Clamp score
+if(score < 0) score = 0;
+
+// Feedback
+if(messages.length === 0){
+feedback.innerHTML = "Excellent posture!";
 }
 else{
-feedback.innerHTML = "✅ Good posture!";
+feedback.innerHTML = messages.join("<br>");
 }
 
+// Color indicator
+if(score > 80){
+scoreText.style.color = "#22c55e"; // green
+}
+else if(score > 50){
+scoreText.style.color = "#facc15"; // yellow
+}
+else{
+scoreText.style.color = "#ef4444"; // red
 }
 
-canvasCtx.restore();
+scoreText.innerHTML = "Score: " + score;
+
+// ===== HISTORY =====
+history.push(score);
+if(history.length > 5){
+history.shift();
+}
+
+historyDiv.innerHTML = "Recent Scores: " + history.join(", ");
+
+}
 
 });
 
@@ -107,6 +183,9 @@ height: 480
 camera.start();
 
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
