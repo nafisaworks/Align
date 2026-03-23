@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>ALIGN</title>
+
+<style>
+
+body{
+font-family: Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+margin:0;
+}
+
+header{
+padding:60px;
+background:linear-gradient(90deg,#38bdf8,#6366f1);
+}
+
+h1{
+font-size:50px;
+margin:0;
+}
+
+.card{
+background:#1e293b;
+margin:30px;
+padding:25px;
+border-radius:12px;
+}
+
+button{
+padding:10px 20px;
+background:#38bdf8;
+border:none;
+border-radius:6px;
+cursor:pointer;
+}
+
+input{
+padding:8px;
+margin:5px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+
+<h1>ALIGN</h1>
+<p>Explore Human Movement and Biomechanics</p>
+
+</header>
+
+<div class="card">
+
+<h2>What is Biomechanics?</h2>
+
+<p>
+Biomechanics studies the mechanics of human movement,
+including forces, motion, and posture.
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>Joint Torque Calculator</h2>
+
+<input id="force" placeholder="Force (N)">
+<input id="distance" placeholder="Distance (m)">
+
+<br><br>
+
+<button onclick="calc()">Calculate</button>
+
+<p id="result"></p>
+
+</div>
+
+<script>
+
+function calc(){
+
+let F=document.getElementById("force").value;
+let d=document.getElementById("distance").value;
+
+let torque=F*d;
+
+document.getElementById("result").innerHTML=
+"Joint Torque = "+torque+" Nm";
+
+}
+
+</script>
+
+</body>
+
+</html>
