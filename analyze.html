@@ -10,20 +10,41 @@
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
 
 <style>
+
 .panel{
 margin-top:20px;
 padding:20px;
 background:rgba(255,255,255,0.05);
 border-radius:15px;
-width:300px;
+width:320px;
 text-align:center;
 box-shadow:0 0 20px rgba(0,0,0,0.3);
 }
 
-.score{
-font-size:40px;
-font-weight:bold;
+.bar{
+height:15px;
+border-radius:10px;
+background:linear-gradient(to right, red, orange, yellow, limegreen);
+margin-top:10px;
+position:relative;
 }
+
+.indicator{
+height:15px;
+width:10px;
+background:white;
+position:absolute;
+top:0;
+border-radius:5px;
+}
+
+.feedback{
+margin-top:15px;
+font-size:18px;
+font-weight:500;
+line-height:1.5;
+}
+
 </style>
 
 </head>
@@ -32,14 +53,19 @@ font-weight:bold;
 
 <div class="analyze-container">
 
-<h1>Live Posture Analyzer</h1>
+<h1>Posture Analyzer</h1>
 
 <video id="video" style="display:none;"></video>
 <canvas id="canvas" width="640" height="480"></canvas>
 
 <div class="panel">
-<div id="score" class="score">Score: --</div>
-<p id="feedback"></p>
+
+<div class="bar">
+<div id="indicator" class="indicator"></div>
+</div>
+
+<p id="feedback" class="feedback"></p>
+
 </div>
 
 </div>
@@ -51,7 +77,7 @@ const canvasElement = document.getElementById('canvas');
 const canvasCtx = canvasElement.getContext('2d');
 
 const feedback = document.getElementById('feedback');
-const scoreText = document.getElementById('score');
+const indicator = document.getElementById('indicator');
 
 const pose = new Pose({
 locateFile: (file) => {
@@ -97,57 +123,49 @@ let nose = results.poseLandmarks[0];
 let score = 100;
 let messages = [];
 
+// Shoulder imbalance
 let shoulderDiff = Math.abs(ls.y - rs.y);
-let headOffset = Math.abs(nose.x - (ls.x + rs.x)/2);
-let lean = Math.abs((ls.x+rs.x)/2 - (lh.x+rh.x)/2);
-
-// Shoulders
 if(shoulderDiff > 0.05){
 score -= 15;
-messages.push("Shoulders uneven");
+messages.push("Try keeping both shoulders level and relaxed");
 }
 
 // Head forward
-if(headOffset > 0.1){
+let headOffset = Math.abs(nose.x - (ls.x + rs.x)/2);
+if(headOffset > 0.08){
 score -= 15;
-messages.push("Head forward");
+messages.push("Bring your head slightly back over your shoulders");
 }
 
-// Slouch
-if(nose.y > ls.y){
-score -= 20;
-messages.push("Slouching");
+// Slouch detection (improved)
+let shoulderHeight = (ls.y + rs.y)/2;
+let hipHeight = (lh.y + rh.y)/2;
+
+if(shoulderHeight > hipHeight - 0.05){
+score -= 25;
+messages.push("Straighten your back and lift your chest slightly");
 }
 
 // Leaning
-if(lean > 0.1){
+let lean = Math.abs((ls.x+rs.x)/2 - (lh.x+rh.x)/2);
+if(lean > 0.08){
 score -= 10;
-messages.push("Leaning sideways");
+messages.push("Try to keep your body centered and balanced");
 }
 
-// Clamp score
+// Clamp
 if(score < 0) score = 0;
+
+// Indicator position
+indicator.style.left = score + "%";
 
 // Feedback
 if(messages.length === 0){
-feedback.innerHTML = "Excellent posture!";
+feedback.innerHTML = "✨ Great posture! Keep it up.";
 }
 else{
 feedback.innerHTML = messages.join("<br>");
 }
-
-// Color indicator
-if(score > 80){
-scoreText.style.color = "#22c55e";
-}
-else if(score > 50){
-scoreText.style.color = "#facc15";
-}
-else{
-scoreText.style.color = "#ef4444";
-}
-
-scoreText.innerHTML = "Score: " + score;
 
 }
 
