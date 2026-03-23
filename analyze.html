@@ -3,6 +3,8 @@
 <head>
 
 <title>ALIGN - Analyzer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <link rel="stylesheet" href="style.css">
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
@@ -16,7 +18,7 @@
 position:fixed;
 top:0;
 width:100%;
-padding:15px;
+padding:12px;
 background:rgba(0,0,0,0.4);
 backdrop-filter:blur(10px);
 display:flex;
@@ -26,11 +28,14 @@ z-index:10;
 }
 
 .navbar h2{
-margin-left:20px;
+margin-left:15px;
+font-size:18px;
 }
 
 .navbar button{
-margin-right:20px;
+margin-right:15px;
+padding:8px 15px;
+border-radius:20px;
 }
 
 /* MAIN */
@@ -40,52 +45,84 @@ flex-direction:column;
 align-items:center;
 justify-content:center;
 min-height:100vh;
-padding-top:80px;
+padding-top:70px;
 }
 
-/* PANEL */
-.panel{
-margin-top:20px;
-padding:25px;
-background:rgba(255,255,255,0.05);
-border-radius:15px;
-width:340px;
+/* TITLE */
+.title{
+font-size:50px;
+background:linear-gradient(90deg,#38bdf8,#6366f1);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
 text-align:center;
-box-shadow:0 0 25px rgba(0,0,0,0.4);
 }
 
-/* BAR */
-.bar{
-height:15px;
-border-radius:10px;
-background:linear-gradient(to right, red, orange, yellow, limegreen);
-margin-top:10px;
-position:relative;
-}
-
-/* INDICATOR */
-.indicator{
-height:20px;
-width:20px;
-background:white;
-position:absolute;
-top:-3px;
-border-radius:50%;
-box-shadow:0 0 12px white;
-}
-
-/* FEEDBACK */
-.feedback{
-margin-top:15px;
-font-size:18px;
-font-weight:500;
-line-height:1.6;
+.subtitle{
+opacity:0.7;
+margin-top:8px;
 }
 
 /* CANVAS */
 canvas{
 border-radius:20px;
 box-shadow:0 0 40px rgba(56,189,248,0.4);
+max-width:90vw;
+height:auto;
+}
+
+/* PANEL */
+.panel{
+margin-top:20px;
+padding:20px;
+background:rgba(255,255,255,0.05);
+border-radius:15px;
+width:90%;
+max-width:350px;
+text-align:center;
+box-shadow:0 0 25px rgba(0,0,0,0.4);
+}
+
+/* BAR */
+.bar{
+height:12px;
+border-radius:10px;
+background:linear-gradient(to right, red, orange, yellow, limegreen);
+position:relative;
+}
+
+/* INDICATOR */
+.indicator{
+height:18px;
+width:18px;
+background:white;
+position:absolute;
+top:-3px;
+border-radius:50%;
+box-shadow:0 0 10px white;
+}
+
+/* FEEDBACK */
+.feedback{
+margin-top:12px;
+font-size:16px;
+line-height:1.5;
+}
+
+/* MOBILE OPTIMIZATION */
+@media(max-width:600px){
+
+.title{
+font-size:32px;
+}
+
+.subtitle{
+font-size:14px;
+}
+
+.feedback{
+font-size:15px;
+}
+
 }
 
 </style>
@@ -94,31 +131,18 @@ box-shadow:0 0 40px rgba(56,189,248,0.4);
 
 <body>
 
-<!-- NAVBAR -->
 <div class="navbar">
 <h2>ALIGN</h2>
 <button onclick="location.href='index.html'">Home</button>
 </div>
 
-<!-- MAIN -->
 <div class="analyze-container">
 
-<h1 style="
-font-size:60px;
-background:linear-gradient(90deg,#38bdf8,#6366f1);
--webkit-background-clip:text;
--webkit-text-fill-color:transparent;
-letter-spacing:2px;
-">
-ALIGN YOUR POSTURE
-</h1>
-
-<p style="opacity:0.7; margin-top:10px;">
-Real-time posture correction & alignment feedback
-</p>
+<h1 class="title">ALIGN YOUR POSTURE</h1>
+<p class="subtitle">Real-time posture feedback</p>
 
 <video id="video" style="display:none;"></video>
-<canvas id="canvas" width="640" height="480"></canvas>
+<canvas id="canvas"></canvas>
 
 <div class="panel">
 
@@ -134,6 +158,8 @@ Real-time posture correction & alignment feedback
 
 <script>
 
+const isMobile = /iPhone|Android/i.test(navigator.userAgent);
+
 const videoElement = document.getElementById('video');
 const canvasElement = document.getElementById('canvas');
 const canvasCtx = canvasElement.getContext('2d');
@@ -142,6 +168,13 @@ const feedback = document.getElementById('feedback');
 const indicator = document.getElementById('indicator');
 
 let currentPosition = 100;
+
+// Set dynamic resolution
+let width = isMobile ? 360 : 640;
+let height = isMobile ? 480 : 480;
+
+canvasElement.width = width;
+canvasElement.height = height;
 
 const pose = new Pose({
 locateFile: (file) => {
@@ -160,13 +193,7 @@ pose.onResults(results => {
 
 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-canvasCtx.drawImage(
-results.image,
-0,
-0,
-canvasElement.width,
-canvasElement.height
-);
+canvasCtx.drawImage(results.image, 0, 0, width, height);
 
 if(results.poseLandmarks){
 
@@ -185,74 +212,57 @@ let lk = results.poseLandmarks[25];
 let rk = results.poseLandmarks[26];
 let nose = results.poseLandmarks[0];
 
-// CALCULATIONS
+// SCORE LOGIC
 let score = 100;
 let messages = [];
 
-// Shoulders
 if(Math.abs(ls.y - rs.y) > 0.05){
 score -= 10;
-messages.push("Keep both shoulders level and relaxed");
+messages.push("Keep shoulders level");
 }
 
-// Head
 if(Math.abs(nose.x - (ls.x + rs.x)/2) > 0.08){
 score -= 10;
-messages.push("Align your head over your shoulders");
+messages.push("Align head with shoulders");
 }
 
-// Slouch
 let shoulderHeight = (ls.y + rs.y)/2;
 let hipHeight = (lh.y + rh.y)/2;
 
 if(shoulderHeight > hipHeight - 0.05){
 score -= 20;
-messages.push("Lift your chest and straighten your back");
+messages.push("Straighten your back");
 }
 
-// Body leaning
 if(Math.abs((ls.x+rs.x)/2 - (lh.x+rh.x)/2) > 0.08){
 score -= 10;
-messages.push("Keep your body centered");
+messages.push("Keep body centered");
 }
 
-// Hip imbalance
 if(Math.abs(lh.y - rh.y) > 0.05){
 score -= 10;
-messages.push("Keep your hips level and balanced");
+messages.push("Balance your hips");
 }
 
-// Weight shift
-let bodyCenter = (ls.x+rs.x)/2;
-let hipCenter = (lh.x+rh.x)/2;
-
-if(Math.abs(bodyCenter - hipCenter) > 0.07){
-score -= 10;
-messages.push("Avoid shifting your weight to one side");
-}
-
-// Knee alignment
 let kneeGap = Math.abs(lk.x - rk.x);
 let hipGap = Math.abs(lh.x - rh.x);
 
 if(kneeGap < hipGap * 0.5){
 score -= 5;
-messages.push("Keep your knees aligned under your hips");
+messages.push("Align knees under hips");
 }
 
-// Clamp
 if(score < 0) score = 0;
 
-// SMOOTH BAR (NO GLITCH)
+// Smooth indicator
 currentPosition += (score - currentPosition) * 0.1;
 
-// Clamp indicator inside bar
 let clamped = Math.max(2, Math.min(98, currentPosition));
 indicator.style.left = clamped + "%";
 
-// STABLE FEEDBACK
+// Feedback
 let newText = messages.length === 0
-? "✨ Excellent posture! Keep it up."
+? "✨ Great posture!"
 : messages.join("<br>");
 
 if(feedback.innerHTML !== newText){
@@ -267,8 +277,8 @@ const camera = new Camera(videoElement, {
 onFrame: async () => {
 await pose.send({image: videoElement});
 },
-width: 640,
-height: 480
+width: width,
+height: height
 });
 
 camera.start();
