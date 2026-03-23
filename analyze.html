@@ -11,6 +11,7 @@
 
 <style>
 
+/* NAVBAR */
 .navbar{
 position:fixed;
 top:0;
@@ -32,6 +33,7 @@ margin-left:20px;
 margin-right:20px;
 }
 
+/* MAIN */
 .analyze-container{
 display:flex;
 flex-direction:column;
@@ -41,6 +43,7 @@ min-height:100vh;
 padding-top:80px;
 }
 
+/* PANEL */
 .panel{
 margin-top:20px;
 padding:25px;
@@ -51,6 +54,7 @@ text-align:center;
 box-shadow:0 0 25px rgba(0,0,0,0.4);
 }
 
+/* BAR */
 .bar{
 height:15px;
 border-radius:10px;
@@ -59,6 +63,7 @@ margin-top:10px;
 position:relative;
 }
 
+/* INDICATOR */
 .indicator{
 height:20px;
 width:20px;
@@ -67,9 +72,9 @@ position:absolute;
 top:-3px;
 border-radius:50%;
 box-shadow:0 0 12px white;
-transition: left 0.4s ease-in-out;
 }
 
+/* FEEDBACK */
 .feedback{
 margin-top:15px;
 font-size:18px;
@@ -77,6 +82,7 @@ font-weight:500;
 line-height:1.6;
 }
 
+/* CANVAS */
 canvas{
 border-radius:20px;
 box-shadow:0 0 40px rgba(56,189,248,0.4);
@@ -88,14 +94,28 @@ box-shadow:0 0 40px rgba(56,189,248,0.4);
 
 <body>
 
+<!-- NAVBAR -->
 <div class="navbar">
 <h2>ALIGN</h2>
 <button onclick="location.href='index.html'">Home</button>
 </div>
 
+<!-- MAIN -->
 <div class="analyze-container">
 
-<h1>Posture Analyzer</h1>
+<h1 style="
+font-size:60px;
+background:linear-gradient(90deg,#38bdf8,#6366f1);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+letter-spacing:2px;
+">
+ALIGN YOUR POSTURE
+</h1>
+
+<p style="opacity:0.7; margin-top:10px;">
+Real-time posture correction & alignment feedback
+</p>
 
 <video id="video" style="display:none;"></video>
 <canvas id="canvas" width="640" height="480"></canvas>
@@ -156,7 +176,7 @@ drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
 drawLandmarks(canvasCtx, results.poseLandmarks,
 {color: '#FF0000', lineWidth: 2});
 
-// ===== LANDMARKS =====
+// LANDMARKS
 let ls = results.poseLandmarks[11];
 let rs = results.poseLandmarks[12];
 let lh = results.poseLandmarks[23];
@@ -165,7 +185,7 @@ let lk = results.poseLandmarks[25];
 let rk = results.poseLandmarks[26];
 let nose = results.poseLandmarks[0];
 
-// ===== CALCULATIONS =====
+// CALCULATIONS
 let score = 100;
 let messages = [];
 
@@ -196,8 +216,6 @@ score -= 10;
 messages.push("Keep your body centered");
 }
 
-// ===== LOWER BODY =====
-
 // Hip imbalance
 if(Math.abs(lh.y - rh.y) > 0.05){
 score -= 10;
@@ -225,24 +243,21 @@ messages.push("Keep your knees aligned under your hips");
 // Clamp
 if(score < 0) score = 0;
 
-// ===== SMOOTH BAR =====
-let step = (score - currentPosition) / 10;
+// SMOOTH BAR (NO GLITCH)
+currentPosition += (score - currentPosition) * 0.1;
 
-let interval = setInterval(() => {
-currentPosition += step;
-indicator.style.left = currentPosition + "%";
+// Clamp indicator inside bar
+let clamped = Math.max(2, Math.min(98, currentPosition));
+indicator.style.left = clamped + "%";
 
-if(Math.abs(score - currentPosition) < 1){
-indicator.style.left = score + "%";
-currentPosition = score;
-clearInterval(interval);
-}
-}, 20);
-
-// ===== FEEDBACK =====
-feedback.innerHTML = messages.length === 0
+// STABLE FEEDBACK
+let newText = messages.length === 0
 ? "✨ Excellent posture! Keep it up."
 : messages.join("<br>");
+
+if(feedback.innerHTML !== newText){
+feedback.innerHTML = newText;
+}
 
 }
 
