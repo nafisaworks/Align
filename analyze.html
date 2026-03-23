@@ -13,10 +13,15 @@
 
 <body>
 
-<h2>Live Posture Analyzer</h2>
+<div class="analyze-container">
 
-<video id="video" width="400" style="display:none;"></video>
-<canvas id="canvas" width="400" height="400"></canvas>
+<h1>Live Posture Analyzer</h1>
+<p>Stand straight and observe your alignment</p>
+
+<video id="video" style="display:none;"></video>
+<canvas id="canvas"></canvas>
+
+</div>
 
 <script>
 
@@ -24,7 +29,6 @@ const videoElement = document.getElementById('video');
 const canvasElement = document.getElementById('canvas');
 const canvasCtx = canvasElement.getContext('2d');
 
-// Setup Pose
 const pose = new Pose({
 locateFile: (file) => {
 return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
@@ -39,16 +43,12 @@ minDetectionConfidence: 0.5,
 minTrackingConfidence: 0.5
 });
 
-// Draw results
 pose.onResults(results => {
 
 canvasCtx.save();
 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+canvasCtx.drawImage(results.image, 0, 0, 500, 500);
 
-// Draw image
-canvasCtx.drawImage(results.image, 0, 0, 400, 400);
-
-// Draw skeleton
 drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
 {color: '#00FF00', lineWidth: 3});
 
@@ -59,13 +59,12 @@ canvasCtx.restore();
 
 });
 
-// Camera
 const camera = new Camera(videoElement, {
 onFrame: async () => {
 await pose.send({image: videoElement});
 },
-width: 400,
-height: 400
+width: 500,
+height: 500
 });
 
 camera.start();
