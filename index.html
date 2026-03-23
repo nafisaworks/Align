@@ -5,44 +5,63 @@
 
 <title>ALIGN</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <style>
 
 body{
-font-family: Arial;
-background:#0f172a;
+font-family:'Poppins', sans-serif;
+background:linear-gradient(135deg,#0f172a,#1e293b);
 color:white;
 text-align:center;
 margin:0;
 }
 
 header{
-padding:60px;
+padding:80px 20px;
 background:linear-gradient(90deg,#38bdf8,#6366f1);
 }
 
 h1{
-font-size:50px;
+font-size:60px;
 margin:0;
 }
 
 .card{
-background:#1e293b;
+background:rgba(255,255,255,0.05);
+backdrop-filter:blur(10px);
 margin:30px;
 padding:25px;
-border-radius:12px;
+border-radius:15px;
+box-shadow:0 0 20px rgba(0,0,0,0.3);
 }
 
 button{
-padding:10px 20px;
+padding:12px 25px;
 background:#38bdf8;
 border:none;
-border-radius:6px;
+border-radius:8px;
 cursor:pointer;
+color:black;
+font-weight:bold;
+}
+
+button:hover{
+background:#0ea5e9;
 }
 
 input{
-padding:8px;
-margin:5px;
+padding:10px;
+margin:8px;
+border-radius:6px;
+border:none;
+}
+
+canvas{
+max-width:600px;
+margin:auto;
 }
 
 </style>
@@ -54,7 +73,7 @@ margin:5px;
 <header>
 
 <h1>ALIGN</h1>
-<p>Explore Human Movement and Biomechanics</p>
+<p>Explore Human Movement & Biomechanics</p>
 
 </header>
 
@@ -63,8 +82,8 @@ margin:5px;
 <h2>What is Biomechanics?</h2>
 
 <p>
-Biomechanics studies the mechanics of human movement,
-including forces, motion, and posture.
+Biomechanics studies how forces and motion interact in the human body,
+helping us understand posture, movement, and performance.
 </p>
 
 </div>
@@ -84,6 +103,14 @@ including forces, motion, and posture.
 
 </div>
 
+<div class="card">
+
+<h2>Movement Graph (Knee Angle)</h2>
+
+<canvas id="chart"></canvas>
+
+</div>
+
 <script>
 
 function calc(){
@@ -97,6 +124,22 @@ document.getElementById("result").innerHTML=
 "Joint Torque = "+torque+" Nm";
 
 }
+
+// Chart
+
+const ctx=document.getElementById('chart');
+
+new Chart(ctx,{
+type:'line',
+data:{
+labels:["0","1","2","3","4","5"],
+datasets:[{
+label:"Knee Angle",
+data:[10,30,50,40,20,10],
+borderWidth:2
+}]
+}
+});
 
 </script>
 
