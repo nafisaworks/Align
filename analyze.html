@@ -262,11 +262,26 @@ indicator.style.left = clamped + "%";
 
 // Feedback
 let newText = messages.length === 0
-? "✨ Great posture!"
+? "✨ Great posture! Keep it up."
 : messages.join("<br>");
 
-if(feedback.innerHTML !== newText){
-feedback.innerHTML = newText;
+// ===== FEEDBACK DELAY SYSTEM =====
+if(!window.lastFeedbackTime){
+window.lastFeedbackTime = 0;
+}
+
+let now = Date.now();
+
+// update only every 1.2 seconds
+if(now - window.lastFeedbackTime > 1200){
+
+    // update only if actually different
+    if(window.lastFeedbackText !== newText){
+        feedback.innerHTML = newText;
+        window.lastFeedbackText = newText;
+    }
+
+    window.lastFeedbackTime = now;
 }
 
 }
