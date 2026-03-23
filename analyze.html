@@ -1,29 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <title>Analyze</title>
 <link rel="stylesheet" href="style.css">
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
 
 </head>
 
 <body>
 
-<h2>Posture Analyzer</h2>
+<h2>Live Posture Analyzer</h2>
 
-<video id="video" width="400" autoplay></video>
-<canvas id="canvas" width="400"></canvas>
+<video id="video" width="400" style="display:none;"></video>
+<canvas id="canvas" width="400" height="400"></canvas>
 
 <script>
 
-const video = document.getElementById('video');
+const videoElement = document.getElementById('video');
+const canvasElement = document.getElementById('canvas');
+const canvasCtx = canvasElement.getContext('2d');
 
-navigator.mediaDevices.getUserMedia({video:true})
-.then(stream=>{
-video.srcObject=stream;
+// Setup Pose
+const pose = new Pose({
+locateFile: (file) => {
+return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+}
 });
+
+pose.setOptions({
+modelComplexity: 1,
+smoothLandmarks: true,
+enableSegmentation: false,
+minDetectionConfidence: 0.5,
+minTrackingConfidence: 0.5
+});
+
+// Draw results
+pose.onResults(results => {
+
+canvasCtx.save();
+canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+// Draw image
+canvasCtx.drawImage(results.image, 0, 0, 400, 400);
+
+// Draw skeleton
+drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
+{color: '#00FF00', lineWidth: 3});
+
+drawLandmarks(canvasCtx, results.poseLandmarks,
+{color: '#FF0000', lineWidth: 2});
+
+canvasCtx.restore();
+
+});
+
+// Camera
+const camera = new Camera(videoElement, {
+onFrame: async () => {
+await pose.send({image: videoElement});
+},
+width: 400,
+height: 400
+});
+
+camera.start();
 
 </script>
 
