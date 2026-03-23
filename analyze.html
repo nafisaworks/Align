@@ -11,14 +11,44 @@
 
 <style>
 
+.navbar{
+position:fixed;
+top:0;
+width:100%;
+padding:15px;
+background:rgba(0,0,0,0.4);
+backdrop-filter:blur(10px);
+display:flex;
+justify-content:space-between;
+align-items:center;
+z-index:10;
+}
+
+.navbar h2{
+margin-left:20px;
+}
+
+.navbar button{
+margin-right:20px;
+}
+
+.analyze-container{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+min-height:100vh;
+padding-top:80px;
+}
+
 .panel{
 margin-top:20px;
-padding:20px;
+padding:25px;
 background:rgba(255,255,255,0.05);
 border-radius:15px;
-width:320px;
+width:340px;
 text-align:center;
-box-shadow:0 0 20px rgba(0,0,0,0.3);
+box-shadow:0 0 25px rgba(0,0,0,0.4);
 }
 
 .bar{
@@ -36,15 +66,20 @@ background:white;
 position:absolute;
 top:-3px;
 border-radius:50%;
-box-shadow:0 0 10px white;
-transition:0.2s;
+box-shadow:0 0 12px white;
+transition: left 0.4s ease-in-out;
 }
 
 .feedback{
 margin-top:15px;
 font-size:18px;
 font-weight:500;
-line-height:1.5;
+line-height:1.6;
+}
+
+canvas{
+border-radius:20px;
+box-shadow:0 0 40px rgba(56,189,248,0.4);
 }
 
 </style>
@@ -52,6 +87,11 @@ line-height:1.5;
 </head>
 
 <body>
+
+<div class="navbar">
+<h2>ALIGN</h2>
+<button onclick="location.href='index.html'">Home</button>
+</div>
 
 <div class="analyze-container">
 
@@ -80,6 +120,8 @@ const canvasCtx = canvasElement.getContext('2d');
 
 const feedback = document.getElementById('feedback');
 const indicator = document.getElementById('indicator');
+
+let currentPosition = 100;
 
 const pose = new Pose({
 locateFile: (file) => {
@@ -114,60 +156,93 @@ drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
 drawLandmarks(canvasCtx, results.poseLandmarks,
 {color: '#FF0000', lineWidth: 2});
 
-// LANDMARKS
+// ===== LANDMARKS =====
 let ls = results.poseLandmarks[11];
 let rs = results.poseLandmarks[12];
 let lh = results.poseLandmarks[23];
 let rh = results.poseLandmarks[24];
+let lk = results.poseLandmarks[25];
+let rk = results.poseLandmarks[26];
 let nose = results.poseLandmarks[0];
 
-// CALCULATIONS
+// ===== CALCULATIONS =====
 let score = 100;
 let messages = [];
 
-// Shoulder imbalance
-let shoulderDiff = Math.abs(ls.y - rs.y);
-if(shoulderDiff > 0.05){
-score -= 15;
-messages.push("Try keeping both shoulders level and relaxed");
+// Shoulders
+if(Math.abs(ls.y - rs.y) > 0.05){
+score -= 10;
+messages.push("Keep both shoulders level and relaxed");
 }
 
-// Head forward
-let headOffset = Math.abs(nose.x - (ls.x + rs.x)/2);
-if(headOffset > 0.08){
-score -= 15;
-messages.push("Bring your head slightly back over your shoulders");
+// Head
+if(Math.abs(nose.x - (ls.x + rs.x)/2) > 0.08){
+score -= 10;
+messages.push("Align your head over your shoulders");
 }
 
-// Slouch detection (improved)
+// Slouch
 let shoulderHeight = (ls.y + rs.y)/2;
 let hipHeight = (lh.y + rh.y)/2;
 
 if(shoulderHeight > hipHeight - 0.05){
-score -= 25;
-messages.push("Straighten your back and lift your chest slightly");
+score -= 20;
+messages.push("Lift your chest and straighten your back");
 }
 
-// Leaning
-let lean = Math.abs((ls.x+rs.x)/2 - (lh.x+rh.x)/2);
-if(lean > 0.08){
+// Body leaning
+if(Math.abs((ls.x+rs.x)/2 - (lh.x+rh.x)/2) > 0.08){
 score -= 10;
-messages.push("Try to keep your body centered and balanced");
+messages.push("Keep your body centered");
+}
+
+// ===== LOWER BODY =====
+
+// Hip imbalance
+if(Math.abs(lh.y - rh.y) > 0.05){
+score -= 10;
+messages.push("Keep your hips level and balanced");
+}
+
+// Weight shift
+let bodyCenter = (ls.x+rs.x)/2;
+let hipCenter = (lh.x+rh.x)/2;
+
+if(Math.abs(bodyCenter - hipCenter) > 0.07){
+score -= 10;
+messages.push("Avoid shifting your weight to one side");
+}
+
+// Knee alignment
+let kneeGap = Math.abs(lk.x - rk.x);
+let hipGap = Math.abs(lh.x - rh.x);
+
+if(kneeGap < hipGap * 0.5){
+score -= 5;
+messages.push("Keep your knees aligned under your hips");
 }
 
 // Clamp
 if(score < 0) score = 0;
 
-// Indicator position
-indicator.style.left = score + "%";
+// ===== SMOOTH BAR =====
+let step = (score - currentPosition) / 10;
 
-// Feedback
-if(messages.length === 0){
-feedback.innerHTML = "✨ Great posture! Keep it up.";
+let interval = setInterval(() => {
+currentPosition += step;
+indicator.style.left = currentPosition + "%";
+
+if(Math.abs(score - currentPosition) < 1){
+indicator.style.left = score + "%";
+currentPosition = score;
+clearInterval(interval);
 }
-else{
-feedback.innerHTML = messages.join("<br>");
-}
+}, 20);
+
+// ===== FEEDBACK =====
+feedback.innerHTML = messages.length === 0
+? "✨ Excellent posture! Keep it up."
+: messages.join("<br>");
 
 }
 
