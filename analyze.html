@@ -2,7 +2,7 @@
 <html>
 <head>
 
-<title>Analyze</title>
+<title>ALIGN - Analyzer</title>
 <link rel="stylesheet" href="style.css">
 
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
@@ -16,10 +16,12 @@
 <div class="analyze-container">
 
 <h1>Live Posture Analyzer</h1>
-<p>Stand straight and observe your alignment</p>
+<p>Works for both sitting and standing posture</p>
 
 <video id="video" style="display:none;"></video>
-<canvas id="canvas"></canvas>
+<canvas id="canvas" width="640" height="480"></canvas>
+
+<p id="feedback" style="margin-top:20px;font-size:18px;"></p>
 
 </div>
 
@@ -28,6 +30,7 @@
 const videoElement = document.getElementById('video');
 const canvasElement = document.getElementById('canvas');
 const canvasCtx = canvasElement.getContext('2d');
+const feedback = document.getElementById('feedback');
 
 const pose = new Pose({
 locateFile: (file) => {
@@ -47,13 +50,47 @@ pose.onResults(results => {
 
 canvasCtx.save();
 canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-canvasCtx.drawImage(results.image, 0, 0, 500, 500);
+
+canvasCtx.drawImage(
+results.image,
+0,
+0,
+canvasElement.width,
+canvasElement.height
+);
+
+if(results.poseLandmarks){
 
 drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
 {color: '#00FF00', lineWidth: 3});
 
 drawLandmarks(canvasCtx, results.poseLandmarks,
 {color: '#FF0000', lineWidth: 2});
+
+// ===== POSTURE LOGIC =====
+
+let leftShoulder = results.poseLandmarks[11];
+let rightShoulder = results.poseLandmarks[12];
+let nose = results.poseLandmarks[0];
+
+// Shoulder alignment
+let shoulderDiff = Math.abs(leftShoulder.y - rightShoulder.y);
+
+// Head forward detection
+let headOffset = Math.abs(nose.x - (leftShoulder.x + rightShoulder.x)/2);
+
+// Feedback logic
+if(shoulderDiff > 0.05){
+feedback.innerHTML = "⚠️ Your shoulders are uneven";
+}
+else if(headOffset > 0.1){
+feedback.innerHTML = "⚠️ Your head is not aligned with your body";
+}
+else{
+feedback.innerHTML = "✅ Good posture!";
+}
+
+}
 
 canvasCtx.restore();
 
@@ -63,8 +100,8 @@ const camera = new Camera(videoElement, {
 onFrame: async () => {
 await pose.send({image: videoElement});
 },
-width: 500,
-height: 500
+width: 640,
+height: 480
 });
 
 camera.start();
