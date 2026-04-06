@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>ALIGN - Analyzer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+
+<style>
+
+.navbar{
+position:fixed;
+top:0;
+width:100%;
+padding:12px;
+background:rgba(0,0,0,0.4);
+backdrop-filter:blur(10px);
+display:flex;
+justify-content:space-between;
+align-items:center;
+z-index:10;
+}
+
+.navbar h2{
+margin-left:15px;
+font-size:18px;
+}
+
+.navbar button{
+margin-right:10px;
+padding:8px 15px;
+border-radius:20px;
+}
+
+.analyze-container{
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
+min-height:100vh;
+padding-top:70px;
+}
+
+.title{
+font-size:45px;
+background:linear-gradient(90deg,#38bdf8,#6366f1);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+text-align:center;
+}
+
+.subtitle{
+opacity:0.7;
+margin-top:5px;
+}
+
+canvas{
+border-radius:20px;
+box-shadow:0 0 40px rgba(56,189,248,0.4);
+max-width:90vw;
+height:auto;
+}
+
+.panel{
+margin-top:20px;
+padding:20px;
+background:rgba(255,255,255,0.05);
+border-radius:15px;
+width:90%;
+max-width:350px;
+text-align:center;
+}
+
+.bar{
+height:12px;
+border-radius:10px;
+background:linear-gradient(to right, red, orange, yellow, limegreen);
+position:relative;
+}
+
+.indicator{
+height:18px;
+width:18px;
+background:white;
+position:absolute;
+top:-3px;
+border-radius:50%;
+box-shadow:0 0 10px white;
+}
+
+.feedback{
+margin-top:12px;
+font-size:16px;
+line-height:1.5;
+opacity:1;
+transition:opacity 0.5s ease;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="navbar">
+<h2>ALIGN</h2>
+<div>
+<button onclick="toggleVoice()">🔊 Voice ON</button>
+<button onclick="location.href='index.html'">Home</button>
+</div>
+</div>
+
+<div class="analyze-container">
+
+<h1 class="title">ALIGN YOUR POSTURE</h1>
+<p class="subtitle">Real-time posture feedback</p>
+
+<video id="video" style="display:none;"></video>
+<canvas id="canvas"></canvas>
+
+<div class="panel">
+
+<div class="bar">
+<div id="indicator" class="indicator"></div>
+</div>
+
+<p id="feedback" class="feedback"></p>
+
+</div>
+
+</div>
+
+<script>
+
+const isMobile = /iPhone|Android/i.test(navigator.userAgent);
+
+const videoElement = document.getElementById('video');
+const canvasElement = document.getElementById('canvas');
+const canvasCtx = canvasElement.getContext('2d');
+
+const feedback = document.getElementById('feedback');
+const indicator = document.getElementById('indicator');
+
+let currentPosition = 100;
+let voiceEnabled = true;
+let lastSpokenTime = 0;
+let lastSpokenText = "";
+
+// ===== VOICE FUNCTION =====
+function speak(text){
+
+if(!voiceEnabled) return;
+
+if(!('speechSynthesis' in window)) return;
+
+window.speechSynthesis.cancel();
+
+let msg = new SpeechSynthesisUtterance(text);
+msg.rate = 1;
+msg.pitch = 1;
+
+window.speechSynthesis.speak(msg);
+}
+
+// ===== TOGGLE =====
+function toggleVoice(){
+voiceEnabled = !voiceEnabled;
+event.target.innerText = voiceEnabled ? "🔊 Voice ON" : "🔇 Voice OFF";
+}
+
+// Canvas size
+let width = isMobile ? 360 : 640;
+let height = 480;
+
+canvasElement.width = width;
+canvasElement.height = height;
+
+// ===== POSE =====
+const pose = new Pose({
+locateFile: (file) => {
+return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
+}
+});
+
+pose.setOptions({
+modelComplexity: 1,
+smoothLandmarks: true,
+minDetectionConfidence: 0.5,
+minTrackingConfidence: 0.5
+});
+
+pose.onResults(results => {
+
+canvasCtx.clearRect(0, 0, width, height);
+canvasCtx.drawImage(results.image, 0, 0, width, height);
+
+if(results.poseLandmarks){
+
+drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
+{color: '#00FF00', lineWidth: 3});
+
+drawLandmarks(canvasCtx, results.poseLandmarks,
+{color: '#FF0000', lineWidth: 2});
+
+// LANDMARKS
+let ls = results.poseLandmarks[11];
+let rs = results.poseLandmarks[12];
+let lh = results.poseLandmarks[23];
+let rh = results.poseLandmarks[24];
+let lk = results.poseLandmarks[25];
+let rk = results.poseLandmarks[26];
+let nose = results.poseLandmarks[0];
+
+// LOGIC
+let score = 100;
+let messages = [];
+
+if(Math.abs(ls.y - rs.y) > 0.05){
+score -= 10;
+messages.push("Keep shoulders level");
+}
+
+if(Math.abs(nose.x - (ls.x + rs.x)/2) > 0.08){
+score -= 10;
+messages.push("Align head with shoulders");
+}
+
+let shoulderHeight = (ls.y + rs.y)/2;
+let hipHeight = (lh.y + rh.y)/2;
+
+if(shoulderHeight > hipHeight - 0.05){
+score -= 20;
+messages.push("Straighten your back");
+}
+
+if(Math.abs((ls.x+rs.x)/2 - (lh.x+rh.x)/2) > 0.08){
+score -= 10;
+messages.push("Keep body centered");
+}
+
+if(Math.abs(lh.y - rh.y) > 0.05){
+score -= 10;
+messages.push("Balance your hips");
+}
+
+let kneeGap = Math.abs(lk.x - rk.x);
+let hipGap = Math.abs(lh.x - rh.x);
+
+if(kneeGap < hipGap * 0.5){
+score -= 5;
+messages.push("Align knees under hips");
+}
+
+if(score < 0) score = 0;
+
+// Smooth bar
+currentPosition += (score - currentPosition) * 0.1;
+let clamped = Math.max(2, Math.min(98, currentPosition));
+indicator.style.left = clamped + "%";
+
+// ===== FEEDBACK DELAY =====
+let newText = messages.length === 0
+? "✨ Great posture! Keep it up."
+: messages.join(". ");
+
+if(!window.lastFeedbackTime){
+window.lastFeedbackTime = 0;
+window.lastFeedbackText = "";
+}
+
+let now = Date.now();
+
+if(now - window.lastFeedbackTime > 1500){
+
+if(window.lastFeedbackText !== newText){
+
+feedback.style.opacity = 0;
+
+setTimeout(() => {
+feedback.innerHTML = newText;
+feedback.style.opacity = 1;
+}, 200);
+
+window.lastFeedbackText = newText;
+}
+
+window.lastFeedbackTime = now;
+}
+
+// ===== VOICE =====
+if(now - lastSpokenTime > 4000){
+
+if(lastSpokenText !== newText){
+speak(newText);
+lastSpokenText = newText;
+}
+
+lastSpokenTime = now;
+}
+
+}
+
+});
+
+const camera = new Camera(videoElement, {
+onFrame: async () => {
+await pose.send({image: videoElement});
+},
+width: width,
+height: height
+});
+
+camera.start();
+
+</script>
+
+</body>
+</html>
